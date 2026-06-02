@@ -16,10 +16,18 @@ struct ResonanceApp: App {
         }
     }()
 
+    #if targetEnvironment(simulator)
+    private let tracker: MockPlaybackTracker
+    #else
     private let tracker: PlaybackTracker
+    #endif
 
     init() {
+        #if targetEnvironment(simulator)
+        tracker = MockPlaybackTracker(modelContainer: sharedModelContainer)
+        #else
         tracker = PlaybackTracker(modelContainer: sharedModelContainer)
+        #endif
     }
 
     var body: some Scene {

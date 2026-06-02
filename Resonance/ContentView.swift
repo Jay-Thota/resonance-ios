@@ -12,9 +12,12 @@ struct ContentView: View {
                     Label("Dashboard", systemImage: "house")
                 }
 
-            ScrollView {
-                ListeningHeatmapView(cells: viewModel.heatmap)
-                    .padding()
+            NavigationStack {
+                ScrollView {
+                    ListeningHeatmapView(cells: viewModel.heatmap)
+                        .padding()
+                }
+                .navigationTitle("Heatmap")
             }
             .tabItem {
                 Label("Heatmap", systemImage: "calendar")
@@ -30,7 +33,7 @@ struct ContentView: View {
                     Label("Wrapped", systemImage: "gift")
                 }
 
-            Text("Library coming soon")
+            LibraryView()
                 .tabItem {
                     Label("Library", systemImage: "music.note")
                 }
@@ -38,6 +41,9 @@ struct ContentView: View {
         .environment(viewModel)
         .task {
             await viewModel.load(events: events)
+        }
+        .onChange(of: events.count) {
+            Task { await viewModel.load(events: events) }
         }
     }
 }
