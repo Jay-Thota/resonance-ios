@@ -9,17 +9,38 @@ import Charts
 
 struct DashboardView: View {
     @Environment(AnalyticsViewModel.self) private var viewModel
+    @Query(sort: \PlayEvent.playedAt, order: .reverse) private var events: [PlayEvent]
+    @State private var showingProfile = false
 
     var body: some View {
-        ZStack {
+        NavigationStack {
             scrollContent
                 .opacity(viewModel.isLoading ? 0 : 1)
-
-            if viewModel.isLoading {
-                ProgressView("Analysing…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+                .overlay {
+                    if viewModel.isLoading {
+                        ProgressView("Analysing…")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .navigationTitle("Resonance")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { showingProfile = true } label: {
+                            Image(systemName: "person.circle")
+                                .font(.title3)
+                        }
+                    }
+                }
+                .alert("Your Library", isPresented: $showingProfile) {
+                    Button("Done", role: .cancel) {}
+                } message: {
+                    Text("\(events.count) total tracks\n\(uniqueArtistCount) unique artists")
+                }
         }
+    }
+
+    private var uniqueArtistCount: Int {
+        Set(events.map(\.artistName)).count
     }
 
     // MARK: - Scroll content
@@ -27,11 +48,6 @@ struct DashboardView: View {
     private var scrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-
-                // ── Header ───────────────────────────────────────────────
-                Text("Resonance")
-                    .font(.largeTitle.bold())
-                    .padding(.horizontal)
 
                 // ── Stat cards ───────────────────────────────────────────
                 HStack(spacing: 12) {
@@ -107,6 +123,29 @@ struct DashboardView: View {
                         .padding(.horizontal)
                     }
                 }
+
+                // ── Recent Tracks ─────────────────────────────────────────
+                SectionHeader(title: "Recent Tracks")
+                    .padding(.horizontal)
+
+                let recent = Array(events.prefix(10))
+
+                if recent.isEmpty {
+                    emptyPlaceholder("No recent tracks.")
+                        .padding(.horizontal)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(recent.enumerated()), id: \.offset) { index, event in
+                            RecentTrackRow(event: event)
+                            if index < recent.count - 1 {
+                                Divider()
+                                    .padding(.leading, 48)
+                            }
+                        }
+                    }
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal)
+                }
             }
             .padding(.top)
             .padding(.bottom, 32)
@@ -119,6 +158,40 @@ struct DashboardView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Recent track row
+
+private struct RecentTrackRow: View {
+    let event: PlayEvent
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "music.note")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20, alignment: .center)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(event.trackTitle)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                Text(event.artistName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Text(event.playedAt, format: .relative(presentation: .named))
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
     }
 }
 

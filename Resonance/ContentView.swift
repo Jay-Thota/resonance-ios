@@ -20,6 +20,16 @@ struct ContentView: View {
                 Label("Heatmap", systemImage: "calendar")
             }
 
+            TimeMachineView()
+                .tabItem {
+                    Label("Time Machine", systemImage: "clock")
+                }
+
+            WrappedView()
+                .tabItem {
+                    Label("Wrapped", systemImage: "gift")
+                }
+
             Text("Library coming soon")
                 .tabItem {
                     Label("Library", systemImage: "music.note")
